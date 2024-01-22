@@ -8,6 +8,8 @@ This repository contains the code and input files needed to replicate results fr
   * Other. Methods and figures related to counting up and representing access to sequence space, assigning single/double/triple state to empirical data, and estimating alpha from available sources
 * Data_P53. Input file with data on the TP53 case
 * Data_TEM1. Input file with data on the TEM1 case
+* dataEmpirical.zip Contains our simulation results for both empirical landscapes
+* dataRandom.zip Contains our simulation results for random landscapes
 
 Before attempting to use these materials, please read the relevant descriptions in Methods. 
 
