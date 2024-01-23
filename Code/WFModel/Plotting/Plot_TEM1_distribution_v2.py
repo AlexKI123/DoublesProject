@@ -62,6 +62,7 @@ def add_boxplot(ax, data, pos, height=0.07, title="", y_title_offset=0.0, x_titl
     ax_box.set(xlabel='', ylabel='', xticklabels=[], yticklabels=[])
     ax_main.set_xlabel("Fitness")
     ax_main.set_ylabel('Frequency')
+    ax_main.yaxis.label.set_position((0, 0.4))  # Adjust the main y-axis label position
     ax_box.xaxis.set_visible(False)
     ax_box.yaxis.set_visible(False)
     ax_box.set_xlim(ax.get_xlim())
@@ -74,6 +75,6 @@ add_boxplot(ax_main, filtered_data, pos=[left, 0.68, width], height=0.07, title=
 print(width)
 
 # Save and show the plot
-#plt.savefig("TEM1_Dist.pdf")
+plt.savefig("TEM1_Dist.pdf")
 
 plt.show()
