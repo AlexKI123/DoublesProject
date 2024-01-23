@@ -17,6 +17,6 @@ Before attempting to use these materials, please read the relevant descriptions 
 ## Data
 Download the data containing our simulation results for random and empirical landscape here 
 <p align = 'center'>
-<a href='https://zenodo.org/record/4436477#.X_8V-hNKgUF'><img align="center" src="https://img.icons8.com/ios/50/zip.png"/></a>  
+<a href='https://github.com/AlexKI123/DoublesProject'><img align="center" src="https://img.icons8.com/ios/50/zip.png"/></a>  
 
 </p>
