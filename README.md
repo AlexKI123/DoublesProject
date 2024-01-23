@@ -14,7 +14,7 @@ This repository contains the code and input files needed to replicate results fr
 Before attempting to use these materials, please read the relevant descriptions in Methods. 
 
 ## Data
-Download all data and models used in the manuscript here 👇 
+Download the data containing our simulation results for random and empirical landscape here 
 <p align = 'center'>
 <a href='https://zenodo.org/record/4436477#.X_8V-hNKgUF'><img align="center" src="https://img.icons8.com/nolan/96/database.png"/></a>  
 
