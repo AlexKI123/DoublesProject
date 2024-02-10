@@ -42,7 +42,7 @@ sns.histplot(data=data, x="fitness", hue="type", bins=40, palette=["#62AAC5", "#
 legend = ax_main.get_legend()
 legend.set_title("Mutation type")
 legend.set_frame_on(True)
-legend.set_bbox_to_anchor((0.7, 0.65))  # Adjust x and y for precise positioning
+legend.set_bbox_to_anchor((1, 0.6))  # Adjust x and y for precise positioning
 
 
 # Dynamically get the position of the histogram
@@ -51,7 +51,7 @@ left, width = pos.x0, pos.width
 
 # Customization and cleaning
 ax_main.grid(False)  # Remove grid
-ax_main.set_ylim(2*10**(-4), 5)  # Custom y-axis range
+ax_main.set_ylim(2*10**(-4), 50)  # Custom y-axis range
 
 # Adding box plots
 def add_boxplot(ax, data, pos, height=0.07, title="", y_title_offset=0.0, x_title_offset=1.0):
