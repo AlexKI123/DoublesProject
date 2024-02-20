@@ -2,7 +2,6 @@ import itertools
 from itertools import product
 import timeit
 
-# starting sequences and mutated sequences with stop codons are neglected
 
 # Lists of DNA nucleotides and their respective sets.
 DNA_Nucleotides = ['A', 'C', 'G', 'T']
@@ -69,6 +68,8 @@ counterSNsyn = 0  # counter for synonymous SN mutation
 counterDNsyn = 0  # counter for synonymous DN mutation
 counterSNmis = 0  # counter for missense SN mutation
 counterDNmis = 0  # counter for missense DN mutation
+counterSNnon = 0  # counter for nonsense SN mutation
+counterDNnon = 0  # counter for nonsense DN mutation
 counter_all = 0
 counter_all_SN = 0
 counter_all_DN = 0
@@ -85,47 +86,48 @@ for item in product(DNA_Nucleotides, repeat=3*Codons):
         print(stop-start)
 
     AA = AASequence(item)  # wild type AA
-    if AA.find('_') == -1:  # Ignore sequences with stop codons.
-        counter_all += 1
-        NewAASetSN = {AA}
-        for locus in range(len(item)):  # iterating through all loci
-            substi = list(DNA_Nucleotides_set-{item[locus]})  # all substitutions
-            copy_item = list(item[:])
-            for s in range(len(substi)):  # iterating through all substitutions
-                counter_all_SN += 1
-                copy_item[locus] = substi[s]
+    counter_all += 1
+    NewAASetSN = {AA}
+    for locus in range(len(item)):  # iterating through all loci
+        substi = list(DNA_Nucleotides_set-{item[locus]})  # all substitutions
+        copy_item = list(item[:])
+        for s in range(len(substi)):  # iterating through all substitutions
+            counter_all_SN += 1
+            copy_item[locus] = substi[s]
+            NewAA = AASequence(copy_item)  # mutant AA
+            NewAASetSN.add(NewAA)
+            if AA == NewAA:
+                counterSNsyn += 1
+            elif NewAA.find('_') == -1:
+                counterSNnon += 1
+            else:
+                counterSNmis += 1
+    counterSN += (len(NewAASetSN)-1)/Codons  # how many distinct mutant AA are accessible?
+
+    NewAASetDN = {AA}  # wild type AA
+    for dn_comb in range(len(dn_mutations)):  # iterating through all DN combinations
+        substi0 = list(DNA_Nucleotides_set-{item[dn_mutations[dn_comb][0]]})  # all substitutions
+        substi1 = list(DNA_Nucleotides_set-{item[dn_mutations[dn_comb][1]]})  # all substitutions
+
+        copy_item = list(item).copy()
+        for s0 in range(len(substi0)):  # iterating through all substitutions
+            for s1 in range(len(substi1)):  # iterating through all substitutions
+                counter_all_DN += 1
+                copy_item[dn_mutations[dn_comb][0]] = substi0[s0]
+                copy_item[dn_mutations[dn_comb][1]] = substi1[s1]
                 NewAA = AASequence(copy_item)  # mutant AA
-                if NewAA.find('_') == -1:
-                    NewAASetSN.add(NewAA)
-                    if AA == NewAA:
-                        counterSNsyn += 1
-                    else:
-                        counterSNmis += 1
-        counterSN += (len(NewAASetSN)-1)/Codons  # how many distinct mutant AA are accessible?
+                NewAASetDN.add(NewAA)
+                if AA == NewAA:
+                    counterDNsyn += 1
+                elif NewAA.find('_') == -1:
+                    counterDNnon += 1
+                else:
+                    counterDNmis += 1
+    counterDN += (len(NewAASetDN)-1)/Codons
+    counterDNMore += (len(NewAASetDN.difference(NewAASetSN)))/Codons  # how many distinct mutant AA are accessible?
+    counterSNMore += (len(NewAASetSN.difference(NewAASetDN)))/Codons  # how many distinct mutant AA are accessible?
 
-        NewAASetDN = {AA}  # wild type AA
-        for dn_comb in range(len(dn_mutations)):  # iterating through all DN combinations
-            substi0 = list(DNA_Nucleotides_set-{item[dn_mutations[dn_comb][0]]})  # all substitutions
-            substi1 = list(DNA_Nucleotides_set-{item[dn_mutations[dn_comb][1]]})  # all substitutions
-
-            copy_item = list(item).copy()
-            for s0 in range(len(substi0)):  # iterating through all substitutions
-                for s1 in range(len(substi1)):  # iterating through all substitutions
-                    counter_all_DN += 1
-                    copy_item[dn_mutations[dn_comb][0]] = substi0[s0]
-                    copy_item[dn_mutations[dn_comb][1]] = substi1[s1]
-                    NewAA = AASequence(copy_item)  # mutant AA
-                    if NewAA.find('_') == -1:
-                        NewAASetDN.add(NewAA)
-                        if AA == NewAA:
-                            counterDNsyn += 1
-                        else:
-                            counterDNmis += 1
-        counterDN += (len(NewAASetDN)-1)/Codons
-        counterDNMore += (len(NewAASetDN.difference(NewAASetSN)))/Codons  # how many distinct mutant AA are accessible?
-        counterSNMore += (len(NewAASetSN.difference(NewAASetDN)))/Codons  # how many distinct mutant AA are accessible?
-
-        counterSNandDN += (len(NewAASetSN.intersection(NewAASetDN)))/Codons  # how many distinct mutant AA are accessible?
+    counterSNandDN += (len(NewAASetSN.intersection(NewAASetDN)))/Codons  # how many distinct mutant AA are accessible?
 
 print("4**(Codons*3)", 4**(Codons*3))
 print("counter", counter_all)
@@ -145,9 +147,9 @@ print("5: ", counterSNandDN/counter_all)  # Acc AA per nucleotide triplet throug
 
 print("\n")
 print(counterSNsyn/counter_all_SN)  # Prob SN is synonymous mutation
-print(counterSNmis/(counterSNsyn+counterSNmis))  # Prob SN is missense mutation
+print((counterSNmis+counterSNnon)/(counterSNsyn+counterSNmis+counterSNnon))  # Prob SN is nonsynonymous mutation
 
 print(counterDNsyn/counter_all_DN)  # Prob DN is synonymous
-print(counterDNmis/(counterDNsyn+counterDNmis))  # Prob DN is missense mutation
+print((counterDNmis+counterDNnon)/(counterDNsyn+counterDNmis+counterDNnon))  # Prob DN is nonsynonymous mutation
 
 
