@@ -47,7 +47,7 @@ def AASequence(ntSeq):
     return ''.join(AA)
 
 # Setup for analysis.
-Codons = 4
+Codons = 3
 print("RingCodons", Codons)
 
 # Generate all possible DN combinations for the given number of codons.
@@ -147,9 +147,9 @@ for item in product(DNA_Nucleotides, repeat=3*Codons):
 
 
 print("\nFinal Statistics:")
-print('Total genotypes: {}. Sanity check {}'.format(counter_all, 4**(Codons*3)))
-print('Total single nucleotide mutations: {}. Sanity check {}'.format(counter_all_SN, 4**(Codons*3)*Codons*3*3))
-print('Total double nucleotide mutations: {}. Sanity check {}'.format(counter_all_DN, 4**(Codons*3)*(Codons*3)*3*3))
+print('Total genotypes considered: {}. Out of {}'.format(counter_all, 4**(Codons*3)))
+print('Total single nucleotide mutations considered: {}. Out of {}'.format(counter_all_SN, 4**(Codons*3)*Codons*3*3))
+print('Total double nucleotide mutations considered: {}. Out of {}'.format(counter_all_DN, 4**(Codons*3)*(Codons*3)*3*3))
 
 print('\nP_{inac,non} =', counterOnlyDNacc/counter_all_DN)
 print('P_{inac,mis} =', counterOnlyDNaccMissense/counter_all_DN)

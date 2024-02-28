@@ -135,9 +135,9 @@ for item in product(DNA_Nucleotides, repeat=3*Codons):
     counterSNandDN += (len(NewAASetSN.intersection(NewAASetDN)))/Codons
 
 print("\nFinal Statistics:")
-print('Total genotypes: {}. Sanity check {}'.format(counter_all, 4**(Codons*3)))
-print('Total single nucleotide mutations: {}. Sanity check {}'.format(counter_all_SN, 4**(Codons*3)*Codons*3*3))
-print('Total double nucleotide mutations: {}. Sanity check {}'.format(counter_all_DN, 4**(Codons*3)*(Codons*3)*3*3))
+print('Total genotypes considered: {}. Out of {}'.format(counter_all, 4**(Codons*3)))
+print('Total single nucleotide mutations considered: {}. Out of {}'.format(counter_all_SN, 4**(Codons*3)*Codons*3*3))
+print('Total double nucleotide mutations considered: {}. Out of {}'.format(counter_all_DN, 4**(Codons*3)*(Codons*3)*3*3))
 
 print('\nP_{inac} =', counterOnlyDNacc/counter_all_DN)
 
