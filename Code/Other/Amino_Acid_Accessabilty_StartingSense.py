@@ -151,12 +151,11 @@ print('Total genotypes considered: {}. Out of {}'.format(counter_all, 4**(Codons
 print('Total single nucleotide mutations considered: {}. Out of {}'.format(counter_all_SN, 4**(Codons*3)*Codons*3*3))
 print('Total double nucleotide mutations considered: {}. Out of {}'.format(counter_all_DN, 4**(Codons*3)*(Codons*3)*3*3))
 
-print('\nP_{inac,non} =', counterOnlyDNacc/counter_all_DN)
-print('P_{inac,mis} =', counterOnlyDNaccMissense/counter_all_DN)
-
+print('\nP_{inac,non} =', counterOnlyDNacc/(counterDNmis+counterDNnon))
+print('P_{inac,mis} =', counterOnlyDNaccMissense/(counterDNmis+counterDNnon))
 
 print('------------------------------------------')
-print("\nAmino acid sequences accessible by SN mutation per codon: ", counterSN/counter_all)
+print("\nNonsynonymous sequences accessible by SN mutation per codon: ", counterSN/counter_all)
 print("Nonsynonymous sequences accessible by DN mutation per codon: ", counterDN/counter_all)
 print("Nonsynonymous sequences only accessible by DN mutation per codon: ", counterDNMore/counter_all)
 print("Nonsynonymous sequences only accessible by SN mutation per codon: ", counterSNMore/counter_all)
