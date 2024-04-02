@@ -13,7 +13,7 @@ Please direct any feedback to Arlin Stoltzfus (arlin\@umd.edu)
 
 ```{r}
 datadir <- "data-for-alpha-estimates"
-bacterial-alphas <- "alpha-bacterial.csv"
+bacterial-alphas <- "alpha_bacterial.csv"
 ```
 
 # Brief overview 
@@ -408,7 +408,7 @@ multiples$singles <- as.integer(multiples$singles)
 multiples$doubles <- as.integer(multiples$doubles)
 multiples$triples <- as.integer(multiples$triples)
 
-write.csv(multiples, bacterial-alphas, row.names = F)
+write.csv(multiples, bacterial_alphas, row.names = F)
 
 sum(multiples$doubles)/sum(multiples$singles)
 sum(multiples$triples)/sum(multiples$singles)
