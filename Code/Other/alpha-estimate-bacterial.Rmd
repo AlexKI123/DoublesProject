@@ -1,0 +1,416 @@
+---
+title: "Analysis of prokaryotic doublet rate"
+author: "Arlin Stoltzfus"
+date: "2024-03-19"
+output: html_document
+---
+
+# Double/single rate ratio estimates used by Klug, et al
+
+This code is a supplement to Klug A, Avella M, Cano AV, Payne JL, Stoltzfus A, McCandlish, DM. in prep. Less frequent but more numerous: how rare mutational changes contribute to adaptation in finite mutational landscapes.
+
+Please direct any feedback to Arlin Stoltzfus (arlin\@umd.edu)
+
+```{r}
+datadir <- "data-for-alpha-estimates"
+bacterial-alphas <- "alpha-bacterial.csv"
+```
+
+# Brief overview 
+
+To our knowledge, no published study reports the rate of tandem double-nucleotide mutations in a bacerium. However, the data for this calculation are available if one digs into supplementary data files. 
+
+This script processes some tables of nucleotide changes that are available via supplementary data from published MA studies. What it does is to look for rows with a nucleotide sequence position that is +1 relative to the previous row. This assumes that the data are sorted by MA line and then by position, which is usually the case. This method could fail in an unusual case in which, for instance, the last base change listed for line MA1 is a single-nucleotide change at position 99 and then the next strain MA2 has a change at position 100.  
+
+However, this will happen only very rarely, and to be sure it hasn't happened, one can simply inspect the list of tentative doubles to check that they are genuine, and to separately count any triples. There is a case of a triple below in Long 2018. 
+
+1789 Bacteria      Gemmata obscuriglobus DSM5831      GE42   NZ_ABGO01000216.1    14286
+1790 Bacteria      Gemmata obscuriglobus DSM5831      GE42   NZ_ABGO01000216.1    14287
+1860 Bacteria      Gemmata obscuriglobus DSM5831      GE70   NZ_ABGO01000133.1    16939
+1861 Bacteria      Gemmata obscuriglobus DSM5831      GE70   NZ_ABGO01000133.1    16940
+2157 Bacteria Kineococcus radiotolerans SRS30216      KI33         NC_009664.2   142483
+2158 Bacteria Kineococcus radiotolerans SRS30216      KI33         NC_009664.2   142484
+2177 Bacteria Kineococcus radiotolerans SRS30216      KI37         NC_009664.2   414336
+2178 Bacteria Kineococcus radiotolerans SRS30216      KI37         NC_009664.2   414337
+2179 Bacteria Kineococcus radiotolerans SRS30216      KI37         NC_009664.2   414338
+3836 Bacteria   Staphylococcus aureus ATCC 25923      ST62          CP009361.1  1191449
+3837 Bacteria   Staphylococcus aureus ATCC 25923      ST62          CP009361.1  1191450
+
+
+# Input files
+
+The notes for each case explain how to get the source file. Usually it is a csv export from an Excel spreadsheet supplied by the authors. 
+
+```{r files}
+long2018NEE <- paste(datadir, "Long2018-tableS2.csv", sep="/")
+sung2012 <- paste(datadir, "Sung2012-tableS6.csv", sep="/")
+senra2018 <- paste(datadir, "senra-table-S2.csv", sep="/")
+pan2022 <- paste(datadir, "pan2022-table-s23.csv", sep="/")
+kucukyildirim <- paste(datadir, "Kucukyildirim-table-S2.csv", sep="/")
+long2016 <- paste(datadir, "long2016-tableS2.csv", sep="/")
+```
+
+# Long, et al 2018 NEE
+
+Long, et al 2018, Nature Ecol Evol paper. The input table is an Excel csv export from the S2 sheet of the Excel file provided with the supplementary material online. 
+
+```{r}
+mysource <- "Long, et al 2018 NEE"
+```
+
+## filtering 
+
+This has 12 data sets, 11 prokaryotic plus Sphaeroforma arctica JP610.  We will screen this out using Col 1 "Group" set to "Bacteria" not "UniEuk".  
+
+The Colwellia data set has numerous repetitions of C to T at position 1266358. Upon inspection, it appears that this is present in every MA line, out of the first dozen examined. Let's check that. 
+
+```{r}
+long2018 <- read.csv(long2018NEE, skip = 1, stringsAsFactors = F)
+temp <- long2018[long2018$Species == "Colwellia psychrerythraea 34H",]
+# number of MA lines
+length(unique(temp$Line.name))
+# number of hits on 1266358
+sum(temp$Position == 1266358)
+```
+
+This position appears 84 times in the Colwellia block and there are 84 MA lines. Therefore it must have been ancestral to this study and it will be filtered out. 
+
+```{r}
+
+long2018pruned <- long2018[long2018$Group == "Bacteria", ]
+long2018pruned <- long2018pruned[long2018pruned$Position != 1266358, ]
+
+```
+
+## identification and analysis of double and triple hits 
+
+We will create a new "tandem" index and use this to find sites whose Position is the previous position plus 1. 
+```{r}
+sites <- dim(long2018pruned)[1]
+prevPlusOne <- c(0, long2018pruned$Position[1:(sites - 1)] + 1)
+tandem <- long2018pruned$Position == prevPlusOne
+# get all the singles 
+long2018single <- long2018pruned[!tandem, ]
+
+# note the number of hits, i.e., positions that are +1 relative to previous hit
+sum(tandem)
+
+# get all the multiples including doubles, triples, etc. 
+tandem2 <- c(tandem[-1], FALSE)
+long2018multi <- long2018pruned[tandem | tandem2, ]
+
+# inspect this visually 
+long2018multi
+```
+
+By visual inspection, there is one triple in this group, and 8 doubles.  So, when we get the number of doubles for each species, we will correct that for Kineococcus radiotolerans SRS30216, and we will assign 1 triple to that species. 
+
+```{r}
+species = unique(long2018pruned$Species)
+singles <- sapply(species, function(x) {sum(long2018single$Species == x)})
+doubles <- sapply(species, function(x) {sum(long2018multi$Species == x)/2})
+doubles["Kineococcus radiotolerans SRS30216"] <- doubles["Kineococcus radiotolerans SRS30216"] - 1.5
+multiples <- data.frame(species = species, singles = singles, doubles = doubles, triples = 0, source = mysource)
+multiples["Kineococcus radiotolerans SRS30216", "triples"] <- 1
+multiples
+```
+
+# Sung, et al 2012
+
+Data for Mesoplasma florum L1. The input table is a copy-paste table from the Word file for Table S2 provided with the supplementary material online.  
+
+## input 
+
+```{r}
+mydat <- read.csv(sung2012, stringsAsFactors = F)
+myspecies <- "Mesoplasma florum L1"
+mysource <- "Sung, et al 2012"
+```
+
+## identification and analysis of double and triple hits 
+
+We will create a new "tandem" index and use this to find sites whose Position is the previous position plus 1. 
+```{r}
+sites <- dim(mydat)[1]
+prevPlusOne <- c(0, mydat$Pos[1:(sites - 1)] + 1)
+tandem <- mydat$Pos == prevPlusOne
+# get all the singles 
+singles <- mydat[!tandem, ]
+
+# note the number of hits, i.e., positions that are +1 relative to previous hit
+sum(tandem)
+
+# get all the multiples including doubles, triples, etc. 
+tandem2 <- c(tandem[-1], FALSE)
+multi <- mydat[tandem | tandem2, ]
+dim(multi)[1]
+multi
+```
+
+By visual inspection, this is straightforward. There are 5 tandem doubles and no triples.
+
+```{r}
+multiples <- rbind(multiples, c(myspecies, dim(singles)[1], dim(multi)[1]/2, 0, mysource))
+multiples
+```
+
+# Senra, et al 2018
+
+Data for Teredinibacter turnerae. The input table is an Excel csv export from the S2 sheet of the Excel file provided with the supplementary material online. 
+
+The authors report 779 base-pair substitutions.  Table S4 indicates 5 tandem doubles. No triples are represented in Table S4. 
+
+```{r}
+myspecies <- "Teredinibacter turnerae"
+mysource <- "Senra, et al. 2018"
+doubles <- 5 
+triples <- 0
+```
+
+However, it isn't clear whether or not they are counting the doubles in the 779 base-pair substitutions.  To clarify this, and to double-check their numbers, I will parse their Table S2.   
+
+## input 
+
+There is a pre-header line and some cruft at the end. Only read 779 lines. 
+```{r}
+myspecies <- "Teredinibacter turnerae"
+mydat <- read.csv(senra2018, skip = 1, nrows = 779, stringsAsFactors = F)
+
+```
+
+## identification and analysis of double and triple hits 
+
+We will create a new "tandem" index and use this to find sites whose Position is the previous position plus 1. 
+```{r}
+mydat$Pos <- as.integer(gsub("NC.*:", "", mydat$Scaffold.Position))
+sites <- dim(mydat)[1]
+prevPlusOne <- c(0, mydat$Pos[1:(sites - 1)] + 1)
+tandem <- mydat$Pos == prevPlusOne
+# get all the singles 
+singles <- mydat[!tandem, ]
+
+# note the number of hits, i.e., positions that are +1 relative to previous hit
+sum(tandem)
+```
+
+This indicates that the authors have already filtered out the tandem doubles from Table S2 and from their reported value of 779. So, that is the number of singles. 
+
+
+```{r}
+singles <- 779
+
+multiples <- rbind(multiples, c(myspecies, singles, doubles, triples, mysource))
+multiples
+```
+# Kucukyildirim, et al 2016
+
+Data for Mycoplasma smegmatis.  The input table is an Excel csv export from 030130_tables2.xslx, the Excel file provided with the supplementary material online.
+
+## input 
+
+Skip one line, ignore the cruft at the bottom by reading 856 rows. Last one should be at MC2_155:6455680. 
+
+```{r}
+mydat <- read.csv(kucukyildirim, stringsAsFactors = F, skip = 1, nrows = 856)
+
+# confirm last row is MC2_155:6455680
+mydat[dim(mydat)[1],]
+
+myspecies <- "Mycobacterium smegmatis"
+mysource <- "Kucukyildirim, et al 2016"
+```
+
+## identification and analysis of double and triple hits 
+
+We will create a new "tandem" index and use this to find sites whose Position is the previous position plus 1. 
+```{r}
+mydat$Pos <- as.integer(gsub("MC.*:", "", mydat$Position))
+sites <- dim(mydat)[1]
+prevPlusOne <- c(0, mydat$Pos[1:(sites - 1)] + 1)
+tandem <- mydat$Pos == prevPlusOne
+# get all the singles 
+singles <- mydat[!tandem, ]
+
+# note the number of hits, i.e., positions that are +1 relative to previous hit
+sum(tandem)
+
+# get all the multiples including doubles, triples, etc. 
+tandem2 <- c(tandem[-1], FALSE)
+multi <- mydat[tandem | tandem2, ]
+dim(multi)[1]
+multi
+```
+
+By visual inspection, this has 3 doubles and 2 quadruple changes.  I don't know quite what to make of those quadruples.  The number for doubles is about what is expected from other bacteria. 
+
+```{r}
+multiples <- rbind(multiples, c(myspecies, dim(singles)[1], dim(multi)[1]/2 - 4, 0, mysource))
+multiples
+```
+# Pan, et al 2022
+
+Data for Salmonella enterica. The input table is an Excel csv export of sheet S23 from the Excel file provided with the supplementary material online.  
+
+Upon closer examination, I realized that the vast majority of the hits are from MMR-deficient knock-outs, and they should not be counted. The MMR-proficient strains are labeled with the pattern "Sample_[D:T]". 
+
+## input 
+
+```{r}
+mydat <- read.csv(pan2022, stringsAsFactors = F, skip = 1)
+myspecies <- "Salmonella enterica"
+mysource <- "Pan, et al 2022"
+```
+
+## identification and analysis of double and triple hits 
+
+Note that the position variable is called "Position". 
+
+We will create a new "tandem" index and use this to find sites whose Position is the previous position plus 1. 
+```{r}
+sites <- dim(mydat)[1]
+# see notes below for why this is here
+# mydat <- mydat[order(mydat$Position),]
+prevPlusOne <- c(0, mydat$Position[1:(sites - 1)] + 1)
+tandem <- mydat$Position == prevPlusOne
+# get all the singles 
+singles <- mydat[!tandem, ]
+
+# note the number of hits, i.e., positions that are +1 relative to previous hit
+sum(tandem)
+
+# get all the multiples including doubles, triples, etc. 
+tandem2 <- c(tandem[-1], FALSE)
+multi <- mydat[tandem | tandem2, ]
+dim(multi)[1]
+multi
+# write.csv(multi, "Pan2022-sorted.csv", row.names = F)
+```
+
+So, it appears we have nothing.  However, I'm not ready to add this to the table before getting confirmation from the authors that they do not filter out doubles. 
+
+## analysis of intervals 
+
+I was surprised at the lack of doubles and brought this issue to the authors. 
+
+As a result of this, I realized that the vast majority of the mutations are from MMR knockouts and they should not be counted.  
+
+```{r}
+cnt <- dim(mydat)[1]
+tmp <- max(mydat$Position)
+# ML estimate of size
+size <- round(tmp + tmp/cnt)
+mysample <- sample(1:size, cnt, replace = T)
+mysample <- sort(mysample)
+
+plotintervals <- function(sites, max, limit) {
+  myintervals <- abs(c(sites[-1], max) - sites)
+  hist(myintervals, breaks = 50)
+  short <- myintervals[myintervals <= limit]
+  hist(short)
+}
+
+plotintervals(mysample, size, 200)
+plotintervals(mydat$Position, size, 200)
+
+linecnt <- table(mydat$Lines)
+hist(linecnt)
+
+# just 90 hits in non-ABC samples
+length(grep("Sample_[D:T]", mydat$Lines))
+# total muts in lines other than ABC
+
+```
+
+## Recomputing this and adding only the non-knockout data
+
+As explained, we really only want to use the data for MA lines that are not MMR knockouts. 
+
+```{r}
+mydat <- mydat[grep("Sample_[D:T]", mydat$Lines), ]
+sites <- dim(mydat)[1]
+prevPlusOne <- c(0, mydat$Position[1:(sites - 1)] + 1)
+tandem <- mydat$Position == prevPlusOne
+# get all the singles 
+singles <- mydat[!tandem, ]
+
+# note the number of hits, i.e., positions that are +1 relative to previous hit
+sum(tandem)
+
+# get all the multiples including doubles, triples, etc. 
+tandem2 <- c(tandem[-1], FALSE)
+multi <- mydat[tandem | tandem2, ]
+dim(multi)[1]
+
+multiples <- rbind(multiples, c(myspecies, dim(singles)[1], dim(multi)[1]/2, 0, mysource))
+
+```
+
+
+# Three studies on E. coli 
+
+Lee, et al. 2012
+Foster, et al. 2015
+Long, et al. 2016
+
+Of these, Lee, et al 2012 and Foster, et al. 2015 do not provide individual mutation calls in their publication or supplementary materials. 
+
+Long, et al have data for various concentrations of norfloxacin.  
+
+# Long, et al 2016
+
+Data for Escherichia coli. The input table is an Excel csv export from the S2 sheet of the Excel file provided with the supplementary material online. 
+
+```{r}
+myspecies <- "Escherichia coli"
+mysource <- "Long, et al 2016"
+```
+
+## input 
+
+There is a pre-header line.
+```{r}
+mydat <- read.csv(long2016, skip = 1, stringsAsFactors = F)
+
+```
+
+## identification and analysis of double and triple hits 
+
+We will create a new "tandem" index and use this to find sites whose Position is the previous position plus 1. 
+```{r}
+mydat$Pos <- as.integer(gsub("NC.*:", "", mydat$Position))
+sites <- dim(mydat)[1]
+prevPlusOne <- c(0, mydat$Pos[1:(sites - 1)] + 1)
+tandem <- mydat$Pos == prevPlusOne
+# get all the singles 
+singles <- mydat[!tandem, ]
+
+# note the number of hits, i.e., positions that are +1 relative to previous hit
+sum(tandem)
+
+# get all the multiples including doubles, triples, etc. 
+tandem2 <- c(tandem[-1], FALSE)
+multi <- mydat[tandem | tandem2, ]
+dim(multi)[1]
+multi
+```
+
+Visual inspection indicates each pair is a tandem double in the same MA line. So we are ready to add this to the output table. 
+
+```{r}
+multiples <- rbind(multiples, c(myspecies, dim(singles)[1], dim(multi)[1]/2, 0, mysource))
+```
+
+
+# output and final tallies 
+
+```{r}
+multiples$singles <- as.integer(multiples$singles)
+multiples$doubles <- as.integer(multiples$doubles)
+multiples$triples <- as.integer(multiples$triples)
+
+write.csv(multiples, bacterial-alphas, row.names = F)
+
+sum(multiples$doubles)/sum(multiples$singles)
+sum(multiples$triples)/sum(multiples$singles)
+```
+
